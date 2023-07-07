@@ -9,7 +9,7 @@ try {
       console.log("Cannot connect to the sensor.");
     }
   });
-  accelerometer.addEventListener("reading", () => reloadOnShake(accelerometer));
+  accelerometer.addEventListener("reading", () => {document.getElementById("acc").innerHTML = `<p>x: ${accelerometer.x}</p><p>y: ${accelerometer.y}</p><p>z: ${accelerometer.z}</p>`});
   accelerometer.start();
 } catch (error) {
   // Handle construction errors.
