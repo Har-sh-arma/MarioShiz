@@ -32,7 +32,7 @@ const negotiate = ()=>{
         })
     }).then(()=>{
         let offer = pc.localDescription;
-        return axios.post('/offer', {sdp:offer.sdp, type:offer.type, video_transform :'none'}, {baseURL: "http://192.168.0.103:8000"})
+        return axios.post('/offer', {sdp:offer.sdp, type:offer.type, video_transform :'none'}, {baseURL: "http://192.168.0.104:8000"})
     }).then((res)=>{
         pc.setRemoteDescription(res.data)
         console.log(pc.remoteDescription);
