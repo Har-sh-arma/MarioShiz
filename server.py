@@ -18,6 +18,7 @@ logger = logging.getLogger("pc")
 pcs = set()
 relay = MediaRelay()
 
+mobile = {"ax":"", "ay":"", "az":""}
 
 class VideoTransformTrack(MediaStreamTrack):
     """
@@ -77,9 +78,10 @@ async def offer(request):
     def on_datachannel(channel):
         @channel.on("message")
         def on_message(message):
-            print(f"Message:{message}")
-            if isinstance(message, str) and message.startswith("ping"):
-                channel.send("pong" + message[4:])
+            # print(f"Message:{message}")
+            l = message.split()
+            mobile["ax"], mobile["ay"], mobile["az"] = l[0], l[1], l[2]
+            print(mobile)
 
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():
