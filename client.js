@@ -4,8 +4,8 @@ let pc = null;
 var dc = null, dcInterval = null;
 let accelerometer = null;
 let message = ""
-
-
+let selected_cam = null;
+let currentStream;
 
 const negotiate = () => {
     return pc.createOffer().then((o) => {
@@ -44,7 +44,8 @@ const start = () => {
     pc = new RTCPeerConnection();
 
     try {
-        accelerometer = new Accelerometer({ referenceFrame: "device" });
+        // accelerometer = new Accelerometer({ referenceFrame: "device" });
+        accelerometer = new LinearAccelerationSensor({ frequency: 60 });
         accelerometer.addEventListener("error", (event) => {
             // Handle runtime errors.
             if (event.error.name === "NotAllowedError") {
@@ -78,8 +79,11 @@ const start = () => {
             throw error;
         }
     }
+    if (typeof currentStream !== 'undefined') {
+        stopMediaTracks(currentStream);
+      }
 
-    navigator.mediaDevices.getUserMedia({ video: {deviceId:"f9bbaa90cf11418de1fe757ebdb96d45cdef137658f244425251751111c57d39"}, audio: false}).then(
+    navigator.mediaDevices.getUserMedia({ video: {deviceId:selected_cam}, audio: false}).then(
         (stream) => {
             stream.getTracks().forEach(
                 (track) => {
@@ -93,7 +97,38 @@ const start = () => {
     )
 }
 
-navigator.mediaDevices.enumerateDevices().then((mediaDevices)=>{mediaDevices.forEach((mediaDevice)=>{console.log(mediaDevice.deviceId);})});
+
+function stopMediaTracks(stream) {
+    stream.getTracks().forEach(track => {
+      track.stop();
+    });
+  }
+  
 
 
-start()
+let video = document.getElementsByTagName("video")[0]
+let camopt = document.getElementById("camoptions")
+navigator.mediaDevices.enumerateDevices().then((mediaDevices)=>{
+    mediaDevices.forEach((mediaDevice)=>{
+        if(mediaDevice.kind === "videoinput"){
+            let but = document.createElement("button");
+            but.innerText = mediaDevice.deviceId;
+            but.onclick = (event)=>{
+                if (typeof currentStream !== 'undefined') {
+                    stopMediaTracks(currentStream);
+                  }
+                selected_cam = event.target.innerText;
+                console.log(selected_cam);
+                navigator.mediaDevices.getUserMedia({ video: {"deviceId":selected_cam}, audio:false}).then(
+                    (stream) =>{
+                        currentStream = stream
+                        video.srcObject = stream
+                        console.log("Src object set");
+                  }).catch((err)=>{console.log(err);})
+            }
+            camopt.appendChild(but)
+        }
+    })
+});
+
+

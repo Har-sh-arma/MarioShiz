@@ -5,7 +5,7 @@ import logging
 import os
 import ssl
 import uuid
-
+import time
 import cv2
 from aiohttp import web
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
@@ -35,12 +35,13 @@ class VideoTransformTrack(MediaStreamTrack):
     async def recv(self):
         frame = await self.track.recv()
         img = frame.to_ndarray(format="bgr24")
+        # round(time.time()*1000)
+        img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        img = cv2.putText(img, str(mobile), (0, 20), cv2.FONT_HERSHEY_SIMPLEX, 
+                   0.5, (255, 0, 0), 2, cv2.LINE_AA)
         cv2.imshow("Video Hahaha", img)
         cv2.waitKey(1)
-
         return frame
-
-
 
 
 async def index(request):
@@ -132,6 +133,7 @@ async def on_shutdown(app):
     coros = [pc.close() for pc in pcs]
     await asyncio.gather(*coros)
     pcs.clear()
+
 
 
 if __name__ == "__main__":
