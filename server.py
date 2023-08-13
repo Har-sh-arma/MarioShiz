@@ -6,19 +6,20 @@ import os
 import ssl
 import uuid
 import time
-import cv2
 from aiohttp import web
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, MediaRelay
 from av import VideoFrame
+import csv
+import visual
+import svgDrawer
 
 ROOT = os.path.dirname(__file__)
-
 logger = logging.getLogger("pc")
 pcs = set()
 relay = MediaRelay()
 
-mobile = {"ax":"", "ay":"", "az":""}
+mobile = {"ax":"", "ay":"", "az":"", "vx":0, "vy":0, "vz":0}
 
 class VideoTransformTrack(MediaStreamTrack):
     """
@@ -35,12 +36,8 @@ class VideoTransformTrack(MediaStreamTrack):
     async def recv(self):
         frame = await self.track.recv()
         img = frame.to_ndarray(format="bgr24")
-        # round(time.time()*1000)
-        img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
-        img = cv2.putText(img, str(mobile), (0, 20), cv2.FONT_HERSHEY_SIMPLEX, 
-                   0.5, (255, 0, 0), 2, cv2.LINE_AA)
-        cv2.imshow("Video Hahaha", img)
-        cv2.waitKey(1)
+        visual.applyTransform(img, mobile)
+        
         return frame
 
 
@@ -65,7 +62,6 @@ async def offer(request):
 
     def log_info(msg, *args):
         logger.info(pc_id + " " + msg, *args)
-
     log_info("Created for %s", request.remote)
 
     # prepare local media
@@ -79,10 +75,18 @@ async def offer(request):
     def on_datachannel(channel):
         @channel.on("message")
         def on_message(message):
-            # print(f"Message:{message}")
             l = message.split()
-            mobile["ax"], mobile["ay"], mobile["az"] = l[0], l[1], l[2]
-            print(mobile)
+            mobile["ax"], mobile["ay"], mobile["az"], dt = l[0], l[1], l[2], l[3]
+
+            if(len(mobile["ax"])>9 or len(mobile["ay"])>9 or len(mobile["az"])>9 ):
+                return
+            with open('eggs.csv', 'a', newline='') as csvfile:
+                spamwriter = csv.writer(csvfile, delimiter=',')
+                print(list(map(lambda x: int(x)/100, l)))
+                spamwriter.writerow(list(map(lambda x: int(x)/100, l)))
+
+            mobile["vx"], mobile["vy"] = svgDrawer.appendToFile(int(mobile["ax"]), int(mobile["ay"]), mobile["vx"], mobile["vy"], float(dt)/1000)
+            # print(f"{dt} :: {mobile}")
 
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():

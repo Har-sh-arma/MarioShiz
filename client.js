@@ -6,6 +6,8 @@ let accelerometer = null;
 let message = ""
 let selected_cam = null;
 let currentStream;
+let d = new Date();
+let curr_time = d.getTime();
 
 const negotiate = () => {
     return pc.createOffer().then((o) => {
@@ -44,7 +46,7 @@ const start = () => {
     pc = new RTCPeerConnection();
 
     try {
-        // accelerometer = new Accelerometer({ referenceFrame: "device" });
+        // accelerometer = new Accelerometer({ referenceFrame: "device" , frequency:60});
         accelerometer = new LinearAccelerationSensor({ frequency: 60 });
         accelerometer.addEventListener("error", (event) => {
             // Handle runtime errors.
@@ -59,12 +61,15 @@ const start = () => {
             clearInterval(dcInterval);
         };
         dc.onopen = function () {
-            dcInterval = setInterval(function () {
-                dc.send(message);
-            }, 50);
+            console.log("Connection opened !!!");
         };
         accelerometer.addEventListener("reading", () => {
-            message = `${accelerometer.x.toFixed(2)} ${accelerometer.y.toFixed(2)} ${accelerometer.z.toFixed(2)}`
+            let d = new Date();
+            prev_time = curr_time;
+            curr_time = d.getTime();
+            // console.log(`${curr_time - prev_time}`);
+            message = `${accelerometer.x.toFixed(4)*100} ${accelerometer.y.toFixed(4)*100} ${accelerometer.z.toFixed(4)*100} ${curr_time-prev_time}`
+            dc.send(message);
             // document.getElementById("acc").innerHTML = `<p>x: ${accelerometer.x}</p><p>y: ${accelerometer.y}</p><p>z: ${accelerometer.z}</p>`
         });
         accelerometer.start();
