@@ -47,7 +47,7 @@ const start = () => {
 
     try {
         // accelerometer = new Accelerometer({ referenceFrame: "device" , frequency:60});
-        accelerometer = new LinearAccelerationSensor({ frequency: 60 });
+        accelerometer = new LinearAccelerationSensor({ frequency: 30 });
         accelerometer.addEventListener("error", (event) => {
             // Handle runtime errors.
             if (event.error.name === "NotAllowedError") {

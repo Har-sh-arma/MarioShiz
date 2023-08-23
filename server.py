@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import asyncio
 import json
@@ -13,12 +15,14 @@ from av import VideoFrame
 import csv
 import visual
 import svgDrawer
+import livePlotterFiltered as lv
 
 ROOT = os.path.dirname(__file__)
 logger = logging.getLogger("pc")
 pcs = set()
 relay = MediaRelay()
-
+b, a = lv.butter_lowpass(2, 60, order=6)
+live_lfilter = lv.LiveLFilter(b, a)
 mobile = {"ax":"", "ay":"", "az":"", "vx":0, "vy":0, "vz":0}
 
 class VideoTransformTrack(MediaStreamTrack):
@@ -39,7 +43,6 @@ class VideoTransformTrack(MediaStreamTrack):
         visual.applyTransform(img, mobile)
         
         return frame
-
 
 async def index(request):
     content = open(os.path.join(ROOT, "index.html"), "r").read()
@@ -76,17 +79,17 @@ async def offer(request):
         @channel.on("message")
         def on_message(message):
             l = message.split()
+            l[2] = str(live_lfilter._process(float(l[2])))
             mobile["ax"], mobile["ay"], mobile["az"], dt = l[0], l[1], l[2], l[3]
+            print(f"{dt} :: {mobile}")
 
-            if(len(mobile["ax"])>9 or len(mobile["ay"])>9 or len(mobile["az"])>9 ):
-                return
+            # if(len(mobile["ax"])>9 or len(mobile["ay"])>9 or len(mobile["az"])>9 ):
+            #     return
             with open('eggs.csv', 'a', newline='') as csvfile:
                 spamwriter = csv.writer(csvfile, delimiter=',')
-                print(list(map(lambda x: int(x)/100, l)))
-                spamwriter.writerow(list(map(lambda x: int(x)/100, l)))
+                spamwriter.writerow(list(map(lambda x: float(x)/100, l)))
 
-            mobile["vx"], mobile["vy"] = svgDrawer.appendToFile(int(mobile["ax"]), int(mobile["ay"]), mobile["vx"], mobile["vy"], float(dt)/1000)
-            # print(f"{dt} :: {mobile}")
+            # mobile["vx"], mobile["vy"], mobile["vz"] = svgDrawer.appendToFile(float(mobile["ax"]), float(mobile["ay"]), float(mobile["az"]), mobile["vx"], mobile["vy"], mobile["vz"], float(dt)/1000)
 
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():
